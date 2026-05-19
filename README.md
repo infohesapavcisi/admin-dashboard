@@ -16,9 +16,9 @@ npm run dev
 
 ```bash
 npx wrangler login            # hesap.avcisi@gmail.com ile login
-npx wrangler pages project create netshield-admin --production-branch main
+npx wrangler pages project create hesapavcisi-admin --production-branch main
 npm run build
-npx wrangler pages deploy dist --project-name netshield-admin
+npx wrangler pages deploy dist --project-name hesapavcisi-admin
 ```
 
 Sonrasında `main` branch'e push'lar GitHub Actions ile otomatik deploy olur. Aşağıdaki secret'lar `Settings → Secrets and variables → Actions` altında tanımlı olmalı:
@@ -33,5 +33,5 @@ Render'da çalışan NestJS backend'inin env'ine:
 
 ```
 ADMIN_EMAILS=hasanbudak1@gmail.com,muhammetozata1991@gmail.com
-CORS_ORIGINS=https://netshield-admin.pages.dev,http://localhost:5173
+CORS_ORIGINS=https://hesapavcisi-admin.pages.dev,http://localhost:5173
 ```
