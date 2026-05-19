@@ -5,12 +5,20 @@ import { InflationForm } from '../features/inflation/InflationForm';
 import { CsvImport } from '../features/inflation/CsvImport';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '../components/ui/dialog';
+import { useSortable } from '../lib/useSortable';
+import { SortHeader } from '../components/common/SortHeader';
+
+type InflationSortKey = 'date' | 'country' | 'monthly_rate' | 'annual_rate';
 
 export function InflationPage() {
   const [country, setCountry] = useState<string | undefined>();
   const { data } = useInflation(country);
   const [editing, setEditing] = useState<InflationRate | undefined>();
   const [open, setOpen] = useState(false);
+  const { sorted, sort, toggle } = useSortable<InflationRate, InflationSortKey>(
+    (data ?? []) as InflationRate[],
+    { key: 'date', dir: 'desc' },
+  );
 
   return (
     <div className="space-y-6">
@@ -38,11 +46,15 @@ export function InflationPage() {
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-slate-500">
-            <th>Tarih</th><th>Ülke</th><th>Aylık</th><th>Yıllık</th><th></th>
+            <SortHeader<InflationSortKey> field="date" label="Tarih" sort={sort} onToggle={toggle} />
+            <SortHeader<InflationSortKey> field="country" label="Ülke" sort={sort} onToggle={toggle} />
+            <SortHeader<InflationSortKey> field="monthly_rate" label="Aylık" sort={sort} onToggle={toggle} />
+            <SortHeader<InflationSortKey> field="annual_rate" label="Yıllık" sort={sort} onToggle={toggle} />
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          {((data ?? []) as InflationRate[]).map((r) => (
+          {sorted.map((r) => (
             <tr key={`${r.date}-${r.country}`} className="border-t">
               <td>{r.date}</td>
               <td>{r.country}</td>

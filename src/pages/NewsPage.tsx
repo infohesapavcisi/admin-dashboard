@@ -1,6 +1,18 @@
 import { useState } from 'react';
 import { useNews, useNewsSources, useStaleNewsSources } from '../features/news/useNews';
 import { NewsDetailModal } from '../features/news/NewsDetailModal';
+import { useSortable } from '../lib/useSortable';
+import { SortHeader } from '../components/common/SortHeader';
+
+interface NewsRow {
+  id: string;
+  url: string;
+  title: string;
+  source?: { name: string };
+  source_id?: number;
+  published_at: string;
+}
+type NewsSortKey = 'title' | 'source.name' | 'published_at';
 
 export function NewsPage() {
   const [page, setPage] = useState(1);
@@ -10,7 +22,8 @@ export function NewsPage() {
   const { data: sources } = useNewsSources();
   const { data: stale } = useStaleNewsSources();
 
-  const list = Array.isArray(news) ? news : (news?.items ?? []);
+  const list: NewsRow[] = Array.isArray(news) ? news : (news?.items ?? []);
+  const { sorted, sort, toggle } = useSortable<NewsRow, NewsSortKey>(list, { key: 'published_at', dir: 'desc' });
 
   return (
     <div className="space-y-6">
@@ -37,10 +50,14 @@ export function NewsPage() {
       {isLoading ? <div>Yükleniyor...</div> : (
         <table className="w-full text-sm">
           <thead className="text-left text-slate-500">
-            <tr><th>Başlık</th><th>Kaynak</th><th>Yayın</th></tr>
+            <tr>
+              <SortHeader<NewsSortKey> field="title" label="Başlık" sort={sort} onToggle={toggle} />
+              <SortHeader<NewsSortKey> field="source.name" label="Kaynak" sort={sort} onToggle={toggle} />
+              <SortHeader<NewsSortKey> field="published_at" label="Yayın" sort={sort} onToggle={toggle} />
+            </tr>
           </thead>
           <tbody>
-            {list.map((n: { id: string; url: string; title: string; source?: { name: string }; source_id?: number; published_at: string }) => (
+            {sorted.map((n) => (
               <tr key={n.id} className="border-t hover:bg-slate-50">
                 <td className="py-2">
                   <button
