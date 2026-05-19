@@ -4,11 +4,25 @@ import { ReviewQueueModal } from '../features/kap/ReviewQueueModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { useSortable } from '../lib/useSortable';
+import { SortHeader } from '../components/common/SortHeader';
+
+type UnmatchedSortKey = 'actionType' | 'stockCode' | 'exDate';
+type KapAllSortKey = 'publishDate' | 'stockCodes' | 'kapTitle' | 'subject';
 
 export function KapPage() {
   const { data: all } = useKapList();
   const { data: unmatched } = useKapUnmatched();
   const [reviewing, setReviewing] = useState<any | null>(null);
+
+  const { sorted: sortedUnmatched, sort: sortU, toggle: toggleU } = useSortable<any, UnmatchedSortKey>(
+    (unmatched ?? []) as any[],
+    { key: 'exDate', dir: 'desc' }
+  );
+  const { sorted: sortedAll, sort: sortA, toggle: toggleA } = useSortable<any, KapAllSortKey>(
+    (all ?? []) as any[],
+    { key: 'publishDate', dir: 'desc' }
+  );
 
   return (
     <div className="space-y-6">
@@ -20,9 +34,16 @@ export function KapPage() {
         </TabsList>
         <TabsContent value="review">
           <table className="w-full text-sm">
-            <thead><tr className="text-left"><th>Tip</th><th>Stock</th><th>Tarih</th><th></th></tr></thead>
+            <thead>
+              <tr className="text-left">
+                <SortHeader<UnmatchedSortKey> field="actionType" label="Tip" sort={sortU} onToggle={toggleU} />
+                <SortHeader<UnmatchedSortKey> field="stockCode" label="Stock" sort={sortU} onToggle={toggleU} />
+                <SortHeader<UnmatchedSortKey> field="exDate" label="Tarih" sort={sortU} onToggle={toggleU} />
+                <th></th>
+              </tr>
+            </thead>
             <tbody>
-              {((unmatched ?? []) as any[]).map((u) => (
+              {sortedUnmatched.map((u: any) => (
                 <tr key={u.id} className="border-t">
                   <td><Badge>{u.actionType}{u.subType ? `/${u.subType}` : ''}</Badge></td>
                   <td>{u.stockCode ?? u.kapHistory?.stockCodes ?? '-'}</td>
@@ -35,9 +56,16 @@ export function KapPage() {
         </TabsContent>
         <TabsContent value="all">
           <table className="w-full text-sm">
-            <thead><tr className="text-left"><th>Tarih</th><th>Stock</th><th>Başlık</th><th>Konu</th></tr></thead>
+            <thead>
+              <tr className="text-left">
+                <SortHeader<KapAllSortKey> field="publishDate" label="Tarih" sort={sortA} onToggle={toggleA} />
+                <SortHeader<KapAllSortKey> field="stockCodes" label="Stock" sort={sortA} onToggle={toggleA} />
+                <SortHeader<KapAllSortKey> field="kapTitle" label="Başlık" sort={sortA} onToggle={toggleA} />
+                <SortHeader<KapAllSortKey> field="subject" label="Konu" sort={sortA} onToggle={toggleA} />
+              </tr>
+            </thead>
             <tbody>
-              {((all ?? []) as any[]).map((k) => (
+              {sortedAll.map((k: any) => (
                 <tr key={k.id} className="border-t">
                   <td>{k.publishDate ? String(k.publishDate).slice(0, 10) : '-'}</td>
                   <td>{k.stockCodes ?? '-'}</td>

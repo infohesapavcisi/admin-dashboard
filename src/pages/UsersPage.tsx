@@ -1,12 +1,21 @@
 import { useUserStats, useRecentUsers } from '../features/users/useUserStats';
 import { Card } from '../components/ui/card';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { useSortable } from '../lib/useSortable';
+import { SortHeader } from '../components/common/SortHeader';
+
+type UserSortKey = 'email' | 'first_name' | 'is_active' | 'email_verified' | 'created_at';
 
 export function UsersPage() {
   const { data: stats } = useUserStats();
   const { data: recent } = useRecentUsers();
   if (!stats) return <div>Yükleniyor...</div>;
   const pct = (n: number) => stats.total ? Math.round((n / stats.total) * 100) : 0;
+
+  const { sorted, sort, toggle } = useSortable<any, UserSortKey>(
+    (recent ?? []) as any[],
+    { key: 'created_at', dir: 'desc' }
+  );
 
   return (
     <div className="space-y-6">
@@ -41,11 +50,15 @@ export function UsersPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-500">
-              <th>Email</th><th>Ad</th><th>Aktif</th><th>Doğr.</th><th>Tarih</th>
+              <SortHeader<UserSortKey> field="email" label="Email" sort={sort} onToggle={toggle} />
+              <SortHeader<UserSortKey> field="first_name" label="Ad" sort={sort} onToggle={toggle} />
+              <SortHeader<UserSortKey> field="is_active" label="Aktif" sort={sort} onToggle={toggle} />
+              <SortHeader<UserSortKey> field="email_verified" label="Doğr." sort={sort} onToggle={toggle} />
+              <SortHeader<UserSortKey> field="created_at" label="Tarih" sort={sort} onToggle={toggle} />
             </tr>
           </thead>
           <tbody>
-            {((recent ?? []) as any[]).map((u) => (
+            {sorted.map((u: any) => (
               <tr key={u.id} className="border-t">
                 <td>{u.email}</td>
                 <td>{u.first_name ?? ''} {u.last_name ?? ''}</td>

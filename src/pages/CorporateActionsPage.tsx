@@ -5,6 +5,10 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { useSortable } from '../lib/useSortable';
+import { SortHeader } from '../components/common/SortHeader';
+
+type AdjSortKey = 'stock_code' | 'ex_date' | 'bonus_ratio' | 'rights_ratio' | 'dividend_per_share' | 'status';
 
 export function CorporateActionsPage() {
   const [status, setStatus] = useState<string>('');
@@ -13,6 +17,11 @@ export function CorporateActionsPage() {
   const { data } = useAdjustments({ status: status || undefined, stockCode: stockCode || undefined });
   const apply = useApplyAdjustment();
   const revert = useRevertAdjustment();
+
+  const { sorted, sort, toggle } = useSortable<any, AdjSortKey>(
+    (data ?? []) as any[],
+    { key: 'ex_date', dir: 'desc' }
+  );
 
   return (
     <div className="space-y-6">
@@ -38,11 +47,17 @@ export function CorporateActionsPage() {
       <table className="w-full text-sm">
         <thead>
           <tr className="text-left text-slate-500">
-            <th>Stock</th><th>Ex date</th><th>Bonus</th><th>Rights</th><th>Temettü</th><th>Status</th><th></th>
+            <SortHeader<AdjSortKey> field="stock_code" label="Stock" sort={sort} onToggle={toggle} />
+            <SortHeader<AdjSortKey> field="ex_date" label="Ex date" sort={sort} onToggle={toggle} />
+            <SortHeader<AdjSortKey> field="bonus_ratio" label="Bonus" sort={sort} onToggle={toggle} />
+            <SortHeader<AdjSortKey> field="rights_ratio" label="Rights" sort={sort} onToggle={toggle} />
+            <SortHeader<AdjSortKey> field="dividend_per_share" label="Temettü" sort={sort} onToggle={toggle} />
+            <SortHeader<AdjSortKey> field="status" label="Status" sort={sort} onToggle={toggle} />
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          {((data ?? []) as any[]).map((a) => (
+          {sorted.map((a: any) => (
             <tr key={a.id} className="border-t">
               <td>{a.stock_code}</td>
               <td>{a.ex_date ? String(a.ex_date).slice(0, 10) : '-'}</td>
