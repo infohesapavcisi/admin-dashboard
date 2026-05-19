@@ -11,7 +11,14 @@ export interface InflationRate {
 export function useInflation(country?: string) {
   return useQuery({
     queryKey: ['inflation', country],
-    queryFn: async () => (await api.get('/inflation-rates', { params: { country } })).data,
+    queryFn: async () => {
+      const params: Record<string, string | number> = {
+        startDate: '2020-01-01',
+        limit: 500,
+      };
+      if (country) params.country = country;
+      return (await api.get('/inflation-rates', { params })).data;
+    },
   });
 }
 

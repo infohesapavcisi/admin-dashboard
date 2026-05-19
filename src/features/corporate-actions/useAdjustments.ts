@@ -4,7 +4,11 @@ import { api } from '../../lib/api';
 export function useAdjustments(params: { status?: string; stockCode?: string } = {}) {
   return useQuery({
     queryKey: ['adjustments', params],
-    queryFn: async () => (await api.get('/stock-price-adjustments', { params })).data,
+    queryFn: async () => {
+      const res = await api.get('/stock-price-adjustments', { params });
+      // Endpoint returns { data, total } — unwrap. Also tolerate bare arrays.
+      return Array.isArray(res.data) ? res.data : (res.data?.data ?? []);
+    },
   });
 }
 
