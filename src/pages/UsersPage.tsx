@@ -9,13 +9,13 @@ type UserSortKey = 'email' | 'first_name' | 'is_active' | 'email_verified' | 'cr
 export function UsersPage() {
   const { data: stats } = useUserStats();
   const { data: recent } = useRecentUsers();
-  if (!stats) return <div>Yükleniyor...</div>;
-  const pct = (n: number) => stats.total ? Math.round((n / stats.total) * 100) : 0;
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { sorted, sort, toggle } = useSortable<any, UserSortKey>(
     (recent ?? []) as any[],
-    { key: 'created_at', dir: 'desc' }
+    { key: 'created_at', dir: 'desc' },
   );
+  if (!stats) return <div>Yükleniyor...</div>;
+  const pct = (n: number) => stats.total ? Math.round((n / stats.total) * 100) : 0;
 
   return (
     <div className="space-y-6">

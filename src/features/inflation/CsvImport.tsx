@@ -28,7 +28,7 @@ export function CsvImport() {
 
   return (
     <div className="space-y-2 border rounded p-3">
-      <div className="text-sm font-medium">CSV Import (date,country,monthly_rate,annual_rate)</div>
+      <div className="text-sm font-medium">CSV Import (date,country,rate)</div>
       <input type="file" accept=".csv" onChange={onFile} />
       <div className="text-xs max-h-32 overflow-auto">{log.map((l, i) => <div key={i}>{l}</div>)}</div>
     </div>

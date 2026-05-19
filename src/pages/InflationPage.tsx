@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '../components
 import { useSortable } from '../lib/useSortable';
 import { SortHeader } from '../components/common/SortHeader';
 
-type InflationSortKey = 'date' | 'country' | 'monthly_rate' | 'annual_rate';
+type InflationSortKey = 'date' | 'country' | 'rate';
 
 export function InflationPage() {
   const [country, setCountry] = useState<string | undefined>();
@@ -48,18 +48,16 @@ export function InflationPage() {
           <tr className="text-left text-slate-500">
             <SortHeader<InflationSortKey> field="date" label="Tarih" sort={sort} onToggle={toggle} />
             <SortHeader<InflationSortKey> field="country" label="Ülke" sort={sort} onToggle={toggle} />
-            <SortHeader<InflationSortKey> field="monthly_rate" label="Aylık" sort={sort} onToggle={toggle} />
-            <SortHeader<InflationSortKey> field="annual_rate" label="Yıllık" sort={sort} onToggle={toggle} />
+            <SortHeader<InflationSortKey> field="rate" label="Oran %" sort={sort} onToggle={toggle} />
             <th></th>
           </tr>
         </thead>
         <tbody>
           {sorted.map((r) => (
             <tr key={`${r.date}-${r.country}`} className="border-t">
-              <td>{r.date}</td>
+              <td>{String(r.date).slice(0, 10)}</td>
               <td>{r.country}</td>
-              <td>{r.monthly_rate}</td>
-              <td>{r.annual_rate}</td>
+              <td>{r.rate}</td>
               <td>
                 <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
                   Düzenle

@@ -4,8 +4,7 @@ import { api } from '../../lib/api';
 export interface InflationRate {
   date: string;
   country: string;
-  monthly_rate?: number;
-  annual_rate?: number;
+  rate?: number;
 }
 
 export function useInflation(country?: string) {
