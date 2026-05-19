@@ -15,8 +15,8 @@ export function ReviewQueueModal({ item, onClose }: { item: any | null; onClose:
         <DialogTitle>KAP → StockPriceAdjustment</DialogTitle>
         <div className="space-y-3 text-sm">
           <div><b>Tip:</b> {item.actionType}{item.subType ? ` / ${item.subType}` : ''}</div>
-          <div><b>Stock:</b> {item.stockCode ?? item.kapHistory?.stockCode ?? '-'}</div>
-          <div><b>Başlık:</b> {item.kapHistory?.title ?? '-'}</div>
+          <div><b>Stock:</b> {item.stockCode ?? item.kapHistory?.stockCodes ?? '-'}</div>
+          <div><b>Başlık:</b> {item.kapHistory?.kapTitle ?? '-'}</div>
           <div className="space-y-1">
             <Label>Ex date</Label>
             <Input value={exDate} onChange={(e) => setExDate(e.target.value)} placeholder="YYYY-MM-DD" />

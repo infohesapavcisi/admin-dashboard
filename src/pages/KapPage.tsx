@@ -25,7 +25,7 @@ export function KapPage() {
               {((unmatched ?? []) as any[]).map((u) => (
                 <tr key={u.id} className="border-t">
                   <td><Badge>{u.actionType}{u.subType ? `/${u.subType}` : ''}</Badge></td>
-                  <td>{u.stockCode ?? u.kapHistory?.stockCode ?? '-'}</td>
+                  <td>{u.stockCode ?? u.kapHistory?.stockCodes ?? '-'}</td>
                   <td>{u.exDate ? String(u.exDate).slice(0, 10) : '-'}</td>
                   <td><Button size="sm" onClick={() => setReviewing(u)}>İncele</Button></td>
                 </tr>
@@ -35,13 +35,14 @@ export function KapPage() {
         </TabsContent>
         <TabsContent value="all">
           <table className="w-full text-sm">
-            <thead><tr className="text-left"><th>Tarih</th><th>Stock</th><th>Başlık</th></tr></thead>
+            <thead><tr className="text-left"><th>Tarih</th><th>Stock</th><th>Başlık</th><th>Konu</th></tr></thead>
             <tbody>
               {((all ?? []) as any[]).map((k) => (
                 <tr key={k.id} className="border-t">
-                  <td>{k.publishedAt ? String(k.publishedAt).slice(0, 10) : '-'}</td>
-                  <td>{k.stockCode}</td>
-                  <td>{k.title}</td>
+                  <td>{k.publishDate ? String(k.publishDate).slice(0, 10) : '-'}</td>
+                  <td>{k.stockCodes ?? '-'}</td>
+                  <td>{k.kapTitle}</td>
+                  <td className="text-xs text-slate-500">{k.subject}</td>
                 </tr>
               ))}
             </tbody>
