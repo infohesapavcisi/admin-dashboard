@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNews, useNewsSources, useStaleNewsSources } from '../features/news/useNews';
+import { NewsDetailModal } from '../features/news/NewsDetailModal';
 
 export function NewsPage() {
   const [page, setPage] = useState(1);
   const [sourceId, setSourceId] = useState<number | undefined>();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { data: news, isLoading } = useNews({ page, sourceId });
   const { data: sources } = useNewsSources();
   const { data: stale } = useStaleNewsSources();
@@ -38,10 +40,15 @@ export function NewsPage() {
             <tr><th>Başlık</th><th>Kaynak</th><th>Yayın</th></tr>
           </thead>
           <tbody>
-            {list.map((n: { id: number; url: string; title: string; source?: { name: string }; source_id?: number; published_at: string }) => (
-              <tr key={n.id} className="border-t">
+            {list.map((n: { id: string; url: string; title: string; source?: { name: string }; source_id?: number; published_at: string }) => (
+              <tr key={n.id} className="border-t hover:bg-slate-50">
                 <td className="py-2">
-                  <a href={n.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">{n.title}</a>
+                  <button
+                    onClick={() => setSelectedId(n.id)}
+                    className="text-left text-blue-600 hover:underline"
+                  >
+                    {n.title}
+                  </button>
                 </td>
                 <td>{n.source?.name ?? n.source_id}</td>
                 <td>{new Date(n.published_at).toLocaleString('tr-TR')}</td>
@@ -55,6 +62,8 @@ export function NewsPage() {
         <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="border rounded px-3 py-1 text-sm disabled:opacity-50">Önceki</button>
         <button onClick={() => setPage((p) => p + 1)} className="border rounded px-3 py-1 text-sm">Sonraki</button>
       </div>
+
+      <NewsDetailModal id={selectedId} onClose={() => setSelectedId(null)} />
     </div>
   );
 }
