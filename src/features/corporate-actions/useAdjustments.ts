@@ -27,3 +27,22 @@ export function useRevertAdjustment() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['adjustments'] }),
   });
 }
+
+export interface CreateAdjustmentPayload {
+  stock_code: string;
+  ex_date: string;
+  bonus_ratio?: number;
+  rights_ratio?: number;
+  rights_price_tl?: number;
+  dividend_per_share?: number;
+  applyNow?: boolean;
+}
+
+export function useCreateAdjustment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vals: CreateAdjustmentPayload) =>
+      api.post('/stock-price-adjustments', vals),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['adjustments'] }),
+  });
+}

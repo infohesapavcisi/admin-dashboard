@@ -1,19 +1,33 @@
 import { useState } from 'react';
 import { useAdjustments, useApplyAdjustment, useRevertAdjustment } from '../features/corporate-actions/useAdjustments';
+import { AdjustmentForm } from '../features/corporate-actions/AdjustmentForm';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Input } from '../components/ui/input';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 
 export function CorporateActionsPage() {
   const [status, setStatus] = useState<string>('');
   const [stockCode, setStockCode] = useState<string>('');
+  const [open, setOpen] = useState(false);
   const { data } = useAdjustments({ status: status || undefined, stockCode: stockCode || undefined });
   const apply = useApplyAdjustment();
   const revert = useRevertAdjustment();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Bedelli / Bedelsiz / Temettü</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Bedelli / Bedelsiz / Temettü</h1>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button>Yeni Kayıt</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogTitle>Yeni Adjustment</DialogTitle>
+            <AdjustmentForm onDone={() => setOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="flex gap-2">
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="border rounded px-2 py-1 text-sm">
           <option value="">Tüm statüler</option>
