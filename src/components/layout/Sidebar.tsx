@@ -7,6 +7,7 @@ const items = [
   { to: '/inflation', label: 'Enflasyon' },
   { to: '/kap', label: 'KAP' },
   { to: '/corporate-actions', label: 'Bedelli/Temettü' },
+  { to: '/comments', label: 'Yorumlar' },
   { to: '/users', label: 'Kullanıcılar' },
   { to: '/data-quality', label: 'Veri Kalitesi' },
   { to: '/audit-log', label: 'Audit Log' },

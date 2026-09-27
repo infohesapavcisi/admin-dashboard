@@ -11,6 +11,7 @@ import { CorporateActionsPage } from './pages/CorporateActionsPage';
 import { UsersPage } from './pages/UsersPage';
 import { DataQualityPage } from './pages/DataQualityPage';
 import { AuditLogPage } from './pages/AuditLogPage';
+import { CommentsPage } from './pages/CommentsPage';
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -28,6 +29,7 @@ export const router = createBrowserRouter([
           { path: '/corporate-actions', element: <CorporateActionsPage /> },
           { path: '/users', element: <UsersPage /> },
           { path: '/data-quality', element: <DataQualityPage /> },
+          { path: '/comments', element: <CommentsPage /> },
           { path: '/audit-log', element: <AuditLogPage /> },
         ],
       },
