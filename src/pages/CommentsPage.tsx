@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Card } from '../components/ui/card';
 import {
+  REPORT_REASON_LABELS,
   RISK_FLAG_LABELS,
+  useBulkModerateComments,
   useCommentQueue,
   useCommentStats,
   useModerateComment,
@@ -39,13 +41,16 @@ export function CommentsPage() {
   const [flagged, setFlagged] = useState(false);
   const [page, setPage] = useState(1);
   const [dialog, setDialog] = useState<{
-    comment: CommentRow;
+    comment: CommentRow | null;
+    bulkIds?: string[];
     action: PendingAction;
   } | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const stats = useCommentStats();
   const queue = useCommentQueue({ status, targetType, flagged, page });
   const moderate = useModerateComment();
+  const bulkModerate = useBulkModerateComments();
 
   const items = queue.data?.items ?? [];
   const total = queue.data?.total ?? 0;
@@ -55,7 +60,24 @@ export function CommentsPage() {
   const changeStatus = (next: CommentStatus) => {
     setStatus(next);
     setPage(1);
+    setSelected(new Set());
   };
+
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allSelected = items.length > 0 && items.every((c) => selected.has(c.id));
+  const toggleAll = () => {
+    setSelected(allSelected ? new Set() : new Set(items.map((c) => c.id)));
+  };
+
+  const selectedIds = items.filter((c) => selected.has(c.id)).map((c) => c.id);
 
   return (
     <div className="space-y-6">
@@ -132,6 +154,57 @@ export function CommentsPage() {
         </label>
       </div>
 
+      {items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 border rounded px-3 py-2 bg-slate-50">
+          <label className="flex items-center gap-1.5 text-sm">
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+            Tümünü seç ({items.length})
+          </label>
+
+          {selectedIds.length > 0 && (
+            <>
+              <span className="text-xs text-slate-500">
+                {selectedIds.length} seçili
+              </span>
+              <button
+                onClick={() =>
+                  bulkModerate.mutate(
+                    { ids: selectedIds, action: 'APPROVE' },
+                    { onSuccess: () => setSelected(new Set()) },
+                  )
+                }
+                disabled={bulkModerate.isPending}
+                className="border rounded px-3 py-1 text-sm bg-green-50 hover:bg-green-100 disabled:opacity-50"
+              >
+                Seçilenleri onayla
+              </button>
+              <button
+                onClick={() =>
+                  setDialog({ comment: null, bulkIds: selectedIds, action: 'REJECT' })
+                }
+                className="border rounded px-3 py-1 text-sm hover:bg-slate-100"
+              >
+                Seçilenleri reddet
+              </button>
+              <button
+                onClick={() =>
+                  setDialog({ comment: null, bulkIds: selectedIds, action: 'HIDE' })
+                }
+                className="border rounded px-3 py-1 text-sm hover:bg-slate-100"
+              >
+                Seçilenleri gizle
+              </button>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="text-xs text-slate-500 hover:underline"
+              >
+                seçimi temizle
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {queue.isLoading ? (
         <div>Yükleniyor...</div>
       ) : items.length === 0 ? (
@@ -143,12 +216,30 @@ export function CommentsPage() {
           {items.map((c) => (
             <Card key={c.id} className="p-4">
               <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mb-2">
+                <input
+                  type="checkbox"
+                  checked={selected.has(c.id)}
+                  onChange={() => toggleSelected(c.id)}
+                  className="mr-1"
+                />
                 <span className="font-medium text-slate-700">
                   {c.author.display_name}
                 </span>
                 <span>·</span>
                 <span>
-                  {TARGET_LABELS[c.target_type]}: {c.target_key}
+                  {TARGET_LABELS[c.target_type]}:{' '}
+                  {c.target_url ? (
+                    <a
+                      href={c.target_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-600 hover:underline"
+                    >
+                      {c.target_label ?? c.target_key}
+                    </a>
+                  ) : (
+                    <span title={c.target_key}>{c.target_label ?? c.target_key}</span>
+                  )}
                 </span>
                 <span>·</span>
                 <span>{new Date(c.created_at).toLocaleString('tr-TR')}</span>
@@ -181,6 +272,20 @@ export function CommentsPage() {
                     >
                       {RISK_FLAG_LABELS[flag] ?? flag}
                     </span>
+                  ))}
+                </div>
+              )}
+
+              {c.reports.length > 0 && (
+                <div className="mt-2 border-l-2 border-red-200 pl-2 space-y-0.5">
+                  {c.reports.map((r, i) => (
+                    <div key={i} className="text-[11px] text-slate-600">
+                      <span className="text-red-700">
+                        {REPORT_REASON_LABELS[r.reason] ?? r.reason}
+                      </span>{' '}
+                      — {r.reporter}
+                      {r.note ? `: ${r.note}` : ''}
+                    </div>
                   ))}
                 </div>
               )}
@@ -253,8 +358,10 @@ export function CommentsPage() {
 
       <ModerationDialog
         comment={dialog?.comment ?? null}
+        bulkIds={dialog?.bulkIds}
         action={dialog?.action ?? null}
         onClose={() => setDialog(null)}
+        onDone={() => setSelected(new Set())}
       />
     </div>
   );
