@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Card } from '../components/ui/card';
 import {
+  useBannedUsers,
+  useCommentAnomaly,
+  useUnbanUser,
   REPORT_REASON_LABELS,
   RISK_FLAG_LABELS,
   useBulkModerateComments,
@@ -15,6 +18,7 @@ import {
   ModerationDialog,
   type PendingAction,
 } from '../features/comments/ModerationDialog';
+import { BanUserDialog } from '../features/comments/BanUserDialog';
 
 const STATUS_TABS: { key: CommentStatus; label: string }[] = [
   { key: 'PENDING', label: 'Onay bekleyen' },
@@ -46,11 +50,16 @@ export function CommentsPage() {
     action: PendingAction;
   } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [banTarget, setBanTarget] = useState<{ id: string; name: string } | null>(null);
+  const [showBans, setShowBans] = useState(false);
 
   const stats = useCommentStats();
   const queue = useCommentQueue({ status, targetType, flagged, page });
   const moderate = useModerateComment();
   const bulkModerate = useBulkModerateComments();
+  const anomaly = useCommentAnomaly();
+  const bans = useBannedUsers();
+  const unban = useUnbanUser();
 
   const items = queue.data?.items ?? [];
   const total = queue.data?.total ?? 0;
@@ -111,6 +120,68 @@ export function CommentsPage() {
           </Card>
         ))}
       </div>
+
+      {anomaly.data && anomaly.data.triggered.length > 0 && (
+        <div className="border border-red-300 bg-red-50 rounded p-3 text-sm">
+          <div className="font-medium text-red-800 mb-1">
+            ⚠️ Yorum trafiğinde anormallik
+          </div>
+          <div className="text-xs text-red-900">
+            Son {anomaly.data.window_minutes} dakikada{' '}
+            <b>{anomaly.data.comments}</b> yorum (eşik {anomaly.data.comments_limit}),{' '}
+            <b>{anomaly.data.new_users}</b> yeni kayıt (eşik {anomaly.data.new_users_limit}),{' '}
+            {anomaly.data.rejected_by_screening} otomatik red, {anomaly.data.reports} şikayet.
+          </div>
+        </div>
+      )}
+
+      {anomaly.data && anomaly.data.triggered.length === 0 && (
+        <div className="text-xs text-slate-500">
+          Son {anomaly.data.window_minutes} dk: {anomaly.data.comments} yorum ·{' '}
+          {anomaly.data.new_users} yeni kayıt · {anomaly.data.rejected_by_screening} otomatik red
+          {bans.data && bans.data.total > 0 && (
+            <>
+              {' '}·{' '}
+              <button
+                onClick={() => setShowBans((v) => !v)}
+                className="underline hover:text-slate-700"
+              >
+                {bans.data.total} yasaklı kullanıcı
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {showBans && bans.data && (
+        <div className="border rounded divide-y text-sm">
+          {bans.data.items.map((b) => (
+            <div key={b.user_id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+              <span className="font-medium">{b.display_name}</span>
+              <span className="text-xs text-slate-500">{b.email}</span>
+              <span
+                className={`text-[11px] rounded px-1.5 py-0.5 ${
+                  b.shadow ? 'bg-slate-200 text-slate-700' : 'bg-red-100 text-red-800'
+                }`}
+              >
+                {b.shadow
+                  ? 'sessiz yasak'
+                  : b.banned_until
+                    ? `${new Date(b.banned_until).toLocaleDateString('tr-TR')} tarihine kadar`
+                    : 'yasaklı'}
+              </span>
+              {b.reason && <span className="text-xs text-slate-600">{b.reason}</span>}
+              <button
+                onClick={() => unban.mutate(b.user_id)}
+                disabled={unban.isPending}
+                className="ml-auto text-xs border rounded px-2 py-0.5 hover:bg-slate-100 disabled:opacity-50"
+              >
+                yasağı kaldır
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {STATUS_TABS.map((tab) => (
@@ -330,6 +401,16 @@ export function CommentsPage() {
                 >
                   Kaldır
                 </button>
+                {c.author.id && (
+                  <button
+                    onClick={() =>
+                      setBanTarget({ id: c.author.id as string, name: c.author.display_name })
+                    }
+                    className="border rounded px-3 py-1 text-sm text-red-700 hover:bg-red-50 ml-auto"
+                  >
+                    Kullanıcıyı yasakla
+                  </button>
+                )}
               </div>
             </Card>
           ))}
@@ -355,6 +436,8 @@ export function CommentsPage() {
           Sonraki
         </button>
       </div>
+
+      <BanUserDialog user={banTarget} onClose={() => setBanTarget(null)} />
 
       <ModerationDialog
         comment={dialog?.comment ?? null}
