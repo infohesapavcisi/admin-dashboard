@@ -5,6 +5,13 @@ export type CommentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'HIDDEN';
 export type CommentTargetType = 'STOCK' | 'ASSET' | 'NEWS';
 export type ModerationAction = 'APPROVE' | 'REJECT' | 'HIDE';
 
+export interface CommentReport {
+  reason: string;
+  note: string | null;
+  created_at: string;
+  reporter: string;
+}
+
 export interface CommentRow {
   id: string;
   target_type: CommentTargetType;
@@ -20,6 +27,11 @@ export interface CommentRow {
   dislike_count: number;
   moderation_reason: string | null;
   author: { id: string | null; display_name: string; avatar_url: string | null };
+  /** Hisse adı / haber başlığı / varlık adı — API tek sorguda çözüyor. */
+  target_label: string | null;
+  /** Haber yorumlarında kaynak bağlantısı. */
+  target_url: string | null;
+  reports: CommentReport[];
 }
 
 export interface CommentQueue {
@@ -88,6 +100,22 @@ export function useModerateComment() {
   });
 }
 
+export function useBulkModerateComments() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      ids,
+      action,
+      reason,
+    }: {
+      ids: string[];
+      action: ModerationAction;
+      reason?: string;
+    }) => api.post('/admin/comments/bulk-moderate', { ids, action, reason }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['comments'] }),
+  });
+}
+
 export function useDeleteComment() {
   const qc = useQueryClient();
   return useMutation({
@@ -99,6 +127,15 @@ export function useDeleteComment() {
 }
 
 /** Otomatik tarama etiketlerinin Türkçe karşılıkları. */
+/** Şikayet sebeplerinin Türkçe karşılıkları. */
+export const REPORT_REASON_LABELS: Record<string, string> = {
+  SPAM: 'spam',
+  ABUSE: 'hakaret',
+  INVESTMENT_ADVICE: 'yatırım tavsiyesi',
+  MISINFORMATION: 'yanlış bilgi',
+  OTHER: 'diğer',
+};
+
 export const RISK_FLAG_LABELS: Record<string, string> = {
   ADVICE_ORDER: 'al/sat yönlendirmesi',
   PRICE_TARGET: 'fiyat hedefi',

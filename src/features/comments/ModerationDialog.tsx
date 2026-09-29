@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import {
   RISK_FLAG_LABELS,
+  useBulkModerateComments,
   useDeleteComment,
   useModerateComment,
   type CommentRow,
@@ -35,33 +36,52 @@ const PRESETS = [
 
 export function ModerationDialog({
   comment,
+  bulkIds,
   action,
   onClose,
+  onDone,
 }: {
   comment: CommentRow | null;
+  /** Toplu işlemde seçili yorum id'leri; tekil işlemde boş. */
+  bulkIds?: string[];
   action: PendingAction | null;
   onClose: () => void;
+  onDone?: () => void;
 }) {
   const moderate = useModerateComment();
+  const bulkModerate = useBulkModerateComments();
   const remove = useDeleteComment();
   const [reason, setReason] = useState('');
 
-  if (!comment || !action) return null;
+  const bulk = (bulkIds?.length ?? 0) > 0;
+  if ((!comment && !bulk) || !action) return null;
 
-  const pending = moderate.isPending || remove.isPending;
+  const pending =
+    moderate.isPending || remove.isPending || bulkModerate.isPending;
   const canSubmit = reason.trim().length > 0 && !pending;
 
   const submit = () => {
     if (!canSubmit) return;
     const onSuccess = () => {
       setReason('');
+      onDone?.();
       onClose();
     };
+
+    if (bulk) {
+      // Toplu silme yok: kaldırma tek tek, bilinçli bir işlem olmalı.
+      bulkModerate.mutate(
+        { ids: bulkIds ?? [], action: action === 'HIDE' ? 'HIDE' : 'REJECT', reason: reason.trim() },
+        { onSuccess },
+      );
+      return;
+    }
+
     if (action === 'DELETE') {
-      remove.mutate({ id: comment.id, reason: reason.trim() }, { onSuccess });
+      remove.mutate({ id: comment!.id, reason: reason.trim() }, { onSuccess });
     } else {
       moderate.mutate(
-        { id: comment.id, action, reason: reason.trim() },
+        { id: comment!.id, action, reason: reason.trim() },
         { onSuccess },
       );
     }
@@ -78,19 +98,27 @@ export function ModerationDialog({
       }}
     >
       <DialogContent>
-        <DialogTitle>{TITLES[action]}</DialogTitle>
+        <DialogTitle>
+          {bulk ? `${bulkIds?.length} yorum — ${TITLES[action]}` : TITLES[action]}
+        </DialogTitle>
         <div className="space-y-3 text-sm">
           <div className="text-xs text-slate-500">{HINTS[action]}</div>
 
+          {bulk ? (
+            <div className="bg-slate-50 border rounded p-3 text-xs text-slate-600">
+              Seçili {bulkIds?.length} yoruma aynı sebep yazılacak. İşlem geri
+              alınabilir: durum sekmelerinden tekrar onaylayabilirsiniz.
+            </div>
+          ) : (
           <div className="bg-slate-50 border rounded p-3">
             <div className="text-xs text-slate-500 mb-1">
-              {comment.author.display_name} · {comment.target_type}/
-              {comment.target_key}
+              {comment!.author.display_name} ·{' '}
+              {comment!.target_label ?? `${comment!.target_type}/${comment!.target_key}`}
             </div>
-            <div className="whitespace-pre-wrap">{comment.body}</div>
-            {comment.risk_flags.length > 0 && (
+            <div className="whitespace-pre-wrap">{comment!.body}</div>
+            {comment!.risk_flags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
-                {comment.risk_flags.map((flag) => (
+                {comment!.risk_flags.map((flag) => (
                   <span
                     key={flag}
                     className="text-[11px] bg-amber-100 text-amber-800 rounded px-1.5 py-0.5"
@@ -101,6 +129,7 @@ export function ModerationDialog({
               </div>
             )}
           </div>
+          )}
 
           <div className="space-y-1">
             <Label>Sebep</Label>
