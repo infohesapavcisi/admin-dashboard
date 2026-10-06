@@ -33,3 +33,37 @@ export function useRunJob() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
   });
 }
+
+export interface ManualJobParam {
+  name: 'since' | 'refill';
+  type: 'date' | 'boolean';
+  label: string;
+  required?: boolean;
+  default?: string;
+}
+
+export interface ManualJobRow {
+  jobName: string;
+  description: string;
+  params: ManualJobParam[];
+  lastRun: JobScheduleRow['lastRun'];
+}
+
+export type ManualJobParams = { since?: string; refill?: boolean };
+
+export function useManualJobs() {
+  return useQuery({
+    queryKey: ['jobs', 'manual'],
+    queryFn: async () => (await api.get<ManualJobRow[]>('/admin/jobs/manual')).data,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useStartManualJob() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ name, params }: { name: string; params: ManualJobParams }) =>
+      api.post(`/admin/jobs/manual/${name}/start`, params),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['jobs'] }),
+  });
+}

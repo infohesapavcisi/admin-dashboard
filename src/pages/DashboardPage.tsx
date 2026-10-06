@@ -1,9 +1,11 @@
 import { useDashboard } from '../features/dashboard/useDashboard';
 import { Card } from '../components/ui/card';
 import { Link } from 'react-router-dom';
+import { useManualJobs } from '../features/jobs/useJobs';
 
 export function DashboardPage() {
   const { data, isLoading } = useDashboard();
+  const manual = useManualJobs();
   if (isLoading || !data) return <div>Yükleniyor...</div>;
   return (
     <div className="space-y-6">
@@ -33,6 +35,16 @@ export function DashboardPage() {
           <div className="text-xs text-slate-500">Bekleyen KAP Eşleşmesi</div>
           <div className="text-2xl font-semibold">{data.unmatchedCount}</div>
           <Link to="/kap" className="text-xs text-blue-600 mt-2 inline-block">Review Queue →</Link>
+        </Card>
+        <Card className="p-4">
+          <div className="text-xs text-slate-500">Elle Tetiklenenler</div>
+          <div className="text-2xl font-semibold">{manual.data?.length ?? '-'}</div>
+          {manual.data?.some((j) => j.lastRun?.status === 'RUNNING') && (
+            <div className="text-xs text-amber-600 mt-1">
+              Çalışıyor: {manual.data.filter((j) => j.lastRun?.status === 'RUNNING').map((j) => j.jobName).join(', ')}
+            </div>
+          )}
+          <Link to="/jobs#manual" className="text-xs text-blue-600 mt-2 inline-block">Başlat →</Link>
         </Card>
       </div>
     </div>
